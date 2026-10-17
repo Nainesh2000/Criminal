@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrimeTrace Gujarat - Safety & Intelligence Portal</title>
+    <!-- Leaflet OpenStreetMap CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Crime Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="logo">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>CrimeTrace Gujarat</span>
+        </div>
+        
+        <div class="nav-actions">
+            <!-- Emergency SOS Button -->
+            <button id="sosBtn" class="btn btn-sos" title="Send Emergency SOS with Live GPS Location">
+                <i class="fa-solid fa-triangle-exclamation"></i> SOS / Emergency GPS
+            </button>
+
+            <!-- Theme Toggle Button (Light/Dark Mode) -->
+            <button id="themeToggleBtn" class="icon-btn" title="Toggle Light/Dark Mode">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            
+            <!-- Language Selector (English, Hindi, Gujarati) -->
+            <select id="langSelect" class="lang-select">
+                <option value="en">English</option>
+                <option value="hi">हिंदी (Hindi)</option>
+                <option value="gu">ગુજરાતી (Gujarati)</option>
+            </select>
+
+            <!-- Notification Bell -->
+            <div class="notification-wrapper">
+                <button id="notifBtn" class="icon-btn" title="Notifications">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="badge" id="notifBadge">3</span>
+                </button>
+                <div class="notif-dropdown hidden" id="notifDropdown">
+                    <div class="notif-header">
+                        <strong data-i18n="notificationsTitle">Gujarat Police & Crime Alerts</strong>
+                    </div>
+                    <ul class="notif-list">
+                        <li><i class="fa-solid fa-triangle-exclamation text-danger"></i> Night patrolling increased in Adajan & Dumas Road, Surat.[cite: 1]</li>
+                        <li><i class="fa-solid fa-circle-check text-success"></i> FIR #8091 resolved by Crime Branch Surat.[cite: 1]</li>
+                        <li><i class="fa-solid fa-shield-virus text-warning"></i> Gujarat Police Cyber Helpline alert regarding APK phishing.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Login / Profile Button -->
+            <button id="loginModalBtn" class="btn btn-primary">
+                <i class="fa-solid fa-user-circle"></i> <span id="loginBtnText" data-i18n="login">Login / Profile</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <!-- Breaking Crime Headlines Banner -->
+        <section class="headline-banner">
+            <div class="banner-badge" data-i18n="breakingNews">BREAKING CRIME NEWS</div>
+            <div class="banner-content">
+                <h2 id="headlineTitle">Surat Police Bust Multi-State Cyber Fraud Syndicate Operating via Fake Portals</h2>
+                <p id="headlineDesc">Over ₹1.2 Crore assets seized in coordinated raids across Surat, Ahmedabad, and Rajkot following FIR inputs.[cite: 1]</p>
+            </div>
+        </section>
+
+        <!-- Advanced Incident Search Bar -->
+        <section class="search-section">
+            <div class="search-card">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Search by incident, date, location, time, involved persons, keywords..." data-i18n-placeholder="searchPlaceholder">
+                    <button id="searchBtn" class="btn btn-search" data-i18n="search">Search Incidents</button>
+                </div>
+                <div class="search-hints">
+                    <span><i class="fa-solid fa-filter"></i> Examples: <em>"2026-10-15"</em>, <em>"Adajan"</em>, <em>"Robbery"</em>, <em>"A. Khan"</em></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Automated AI Official Ingestion Sync Bar -->
+        <section class="ai-ingest-bar">
+            <div class="ai-ingest-text">
+                <i class="fa-solid fa-robot text-accent"></i>
+                <span><strong>AI Official Ingest Engine:</strong> Live synced with Gujarat Citizen Portal & FIR Feed. Auto-verified hourly.[cite: 1]</span>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="triggerAIIngest()"><i class="fa-solid fa-arrows-rotate"></i> Sync FIR Ingest</button>
+        </section>
+
+        <!-- Home Page Section Toggle Tabs -->
+        <section class="tab-container">
+            <button class="tab-btn active" id="tabOfficial" onclick="switchTab('official')">
+                <i class="fa-solid fa-building-shield"></i> <span data-i18n="officialInfo">Official Info (Verified FIRs)</span>
+            </button>
+            <button class="tab-btn" id="tabPeople" onclick="switchTab('people')">
+                <i class="fa-solid fa-users"></i> <span data-i18n="peopleInfo">People Info (Citizen Reports)</span>
+            </button>
+        </section>
+
+        <!-- Grid Layout -->
+        <div class="content-grid">
+            
+            <!-- Feed Column (Left Side) -->
+            <div class="feed-column">
+
+                <!-- AI Fact & Truth Checker -->
+                <div class="ai-fact-card">
+                    <div class="ai-header">
+                        <i class="fa-solid fa-brain"></i> <span data-i18n="aiFactChecker">AI Incident Truth & Rumor Checker</span>
+                    </div>
+                    <p class="ai-sub" data-i18n="aiFactDesc">Ask AI whether news, viral messages, or FIR reports in Gujarat are real or rumors.</p>
+                    <div class="ai-input-group">
+                        <input type="text" id="aiQueryInput" placeholder="Paste news headline, statement, or rumor to verify truth...">
+                        <button id="aiVerifyBtn" class="btn btn-ai" data-i18n="verify">Check Truth</button>
+                    </div>
+                    <div id="aiResultBox" class="ai-result hidden"></div>
+                </div>
+
+                <!-- Safe Route Navigator Module -->
+                <div class="card safe-route-card">
+                    <h3><i class="fa-solid fa-route text-accent"></i> Safe Night Route Navigator</h3>
+                    <p class="sub-text">Check well-lit paths with active police patrolling checkpoints in Gujarat cities.</p>
+                    <div class="route-inputs">
+                        <input type="text" id="routeFrom" placeholder="From (e.g., Surat Station)" class="form-control">
+                        <input type="text" id="routeTo" placeholder="To (e.g., Adajan Circle)" class="form-control">
+                        <button class="btn btn-primary" onclick="findSafeRoute()"><i class="fa-solid fa-directions"></i> Find Safe Route</button>
+                    </div>
+                    <div id="routeResult" class="route-result-box hidden"></div>
+                </div>
+
+                <!-- Anonymous FIR Draft Generator -->
+                <div class="card fir-gen-card">
+                    <h3><i class="fa-solid fa-file-contract text-accent"></i> Anonymous FIR Draft Generator</h3>
+                    <p class="sub-text">Generate a formal Gujarati/English police application draft with BNS/IPC legal sections auto-filled.</p>
+                    <div class="form-group">
+                        <input type="text" id="firApplicant" class="form-control" placeholder="Applicant Name (or keep 'Anonymous')">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="firIncidentLocation" class="form-control" placeholder="Incident Place & City">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="firStatement" rows="2" class="form-control" placeholder="Describe what happened in detail..."></textarea>
+                    </div>
+                    <button class="btn btn-secondary full-width" onclick="generateFIRDraft()"><i class="fa-solid fa-file-pdf"></i> Generate Printable FIR Draft</button>
+                    <div id="firDraftOutput" class="fir-output-box hidden"></div>
+                </div>
+
+                <!-- Incident Stream -->
+                <div id="postsFeed" class="posts-feed">
+                    <!-- Dynamic Incident Cards Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Sidebar (Right Side) -->
+            <aside class="sidebar">
+
+                <!-- Real-Time Crime Analytics Chart -->
+                <div class="card chart-card">
+                    <h3><i class="fa-solid fa-chart-pie text-accent"></i> Gujarat Crime Trends Analytics</h3>
+                    <p class="sub-text">FIR Distribution by Category (Current Month)</p>
+                    <canvas id="crimeAnalyticsChart" width="300" height="200"></canvas>
+                </div>
+                
+                <!-- Emergency Portals & Websites -->
+                <div class="card emergency-links-card">
+                    <h3><i class="fa-solid fa-link"></i> <span>Gujarat & India Official Portals</span></h3>
+                    <ul class="emergency-list">
+                        <li><a href="https://gujhome.gujarat.gov.in" target="_blank"><i class="fa-solid fa-building"></i> Gujarat Home Department Portal</a></li>
+                        <li><a href="https://cybercrime.gov.in" target="_blank"><i class="fa-solid fa-shield-virus"></i> National Cyber Crime Portal (1930)</a></li>
+                        <li><a href="https://gujeqrm.gujarat.gov.in" target="_blank"><i class="fa-solid fa-house-tsunami"></i> Gujarat Disaster Management (GSDMA)</a></li>
+                        <li><a href="https://181abhayam.gujarat.gov.in" target="_blank"><i class="fa-solid fa-person-dress"></i> 181 Abhayam Women Helpline Gujarat</a></li>
+                        <li><a href="https://suratpolice.gujarat.gov.in" target="_blank"><i class="fa-solid fa-user-shield"></i> Surat City Police Official Portal[cite: 1]</a></li>
+                    </ul>
+                </div>
+
+                <!-- Nearby Emergency Map -->
+                <div class="card map-card">
+                    <h3><i class="fa-solid fa-map-location-dot"></i> <span data-i18n="nearbyMap">Nearby Emergency Stations</span></h3>
+                    <p class="sub-text" data-i18n="mapSub">Police Stations, High/District Courts, Fire Stations</p>
+                    <div id="nearbyMap" class="leaflet-map-box"></div>
+                </div>
+
+                <!-- Crime Precautions & AI Guide -->
+                <div class="card precaution-card">
+                    <h3><i class="fa-solid fa-shield-cat"></i> <span data-i18n="crimePrecautions">Crime Precautions & AI Guide</span></h3>
+                    <div class="form-group">
+                        <label for="crimeTypeSelect" data-i18n="selectCrimeType">Select or Describe Crime:</label>
+                        <select id="crimeTypeSelect" class="form-control">
+                            <option value="cyber">Cyber Fraud / Online OTP Scams</option>
+                            <option value="burglary">House Burglary & Lock Breaking</option>
+                            <option value="chain_snatching">Chain / Mobile Snatching</option>
+                            <option value="vehicle_theft">Vehicle Theft & Towing Scams</option>
+                            <option value="custom">Custom Crime Query...</option>
+                        </select>
+                    </div>
+                    <div id="customCrimeGroup" class="form-group hidden">
+                        <input type="text" id="customCrimeInput" class="form-control" placeholder="Type incident details...">
+                    </div>
+                    <button id="getPrecautionBtn" class="btn btn-secondary full-width" data-i18n="getPrecautions">How It Happens & Precautions</button>
+                    
+                    <div id="precautionOutput" class="precaution-output hidden"></div>
+                </div>
+
+            </aside>
+        </div>
+
+    </main>
+
+    <!-- Floating Action Button (+) -->
+    <button class="fab" id="addIncidentFab" title="Add Community Incident (+)">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <!-- WhatsApp Query Button (+91 6355 159 954) -->
+    <div class="whatsapp-float-container">
+        <a href="https://wa.me/916355159954?text=Hello%21%20I%20have%20a%20query%20regarding%20CrimeTrace%20Gujarat%20Portal." target="_blank" class="whatsapp-btn" title="Chat on WhatsApp">
+            <i class="fa-brands fa-whatsapp"></i>
+            <span class="wa-tooltip">Query? Chat on WhatsApp</span>
+        </a>
+    </div>
+
+    <!-- Login/Profile Modal -->
+    <div class="modal-overlay hidden" id="loginModal">
+        <div class="modal-box">
+            <button class="close-modal-btn" id="closeLoginModal">&times;</button>
+            <h3 data-i18n="loginModalHeader">Login to CrimeTrace Portal</h3>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Mobile Number / Email</label>
+                    <input type="text" required class="form-control" placeholder="+91 63551 59954 or email...">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" required class="form-control" placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Incident Modal -->
+    <div class="modal-overlay hidden" id="reportModal">
+        <div class="modal-box">
+            <button class="close-modal-btn" id="closeReportModal">&times;</button>
+            <h3><i class="fa-solid fa-pen-to-square"></i> <span data-i18n="reportIncident">Post Community Incident (+ Sign)</span></h3>
+            <form id="reportForm">
+                <div class="form-group">
+                    <label>Incident Headline</label>
+                    <input type="text" id="repTitle" required class="form-control" placeholder="What happened?">
+                </div>
+                <div class="form-group">
+                    <label>Location / Area (Place)</label>
+                    <input type="text" id="repLocation" required class="form-control" placeholder="e.g. Adajan, Surat">
+                </div>
+                <div class="form-group">
+                    <label>Date & Time</label>
+                    <input type="datetime-local" id="repTime" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>People Involved (Names/Suspects)</label>
+                    <input type="text" id="repPeople" class="form-control" placeholder="Names of involved people or description...">
+                </div>
+                <div class="form-group">
+                    <label>Incident Details / Kiske Bare Me Tha</label>
+                    <textarea id="repDetails" rows="3" required class="form-control" placeholder="Explain details..."></textarea>
+                </div>
+                <div class="form-group flex-checkbox">
+                    <input type="checkbox" id="repAnonymous">
+                    <label for="repAnonymous">Post Anonymously (Hide My Profile Details)</label>
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Publish Community Report</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leaflet JS & Custom App JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
